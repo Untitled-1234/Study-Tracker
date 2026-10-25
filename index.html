@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Tracker</title>
+
+    <!-- iOS / Mobile App Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Study Tracker">
+
+    <!-- 1. CUSTOMISING THE APP ICON -->
+    <link rel="apple-touch-icon" id="app-icon-ios" href="Icon.jpg">
+    <link rel="icon" type="image/png" id="app-icon-android" href="Icon.jpg">
+
+    <!-- Dynamic Theme Color for Mobile Browser Bars -->
+    <meta name="theme-color" id="meta-theme-color" content="#0f172a">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Persistent Navigation Header -->
+    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Study Tracker</h1>
+                    <p class="text-xs text-slate-400">Track Personal Productivity</p>
+                </div>
+            </div>
+
+            <!-- Page View Navigation Tabs (Pill Style) -->
+            <nav class="bg-slate-950 border border-slate-800 p-1 rounded-2xl flex items-center gap-1 shadow-inner">
+                <button id="navDashboard" onclick="switchPage('dashboard')" class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-brand-600 text-white shadow-md">
+                    <i class="fa-solid fa-house"></i>
+                    <span class="hidden sm:inline">Dashboard</span>
+                </button>
+                <button id="navAnalytics" onclick="switchPage('analytics')" class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span class="hidden sm:inline">Analytics</span>
+                </button>
+                <button id="navLogs" onclick="switchPage('logs')" class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span class="hidden sm:inline">Session Logs</span>
+                </button>
+            </nav>
+
+            <!-- Settings Button (Page 2 Modal Trigger) -->
+            <button onclick="openSettingsModal()" class="p-2.5 bg-slate-800 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-xl border border-slate-700/80 transition flex items-center gap-2 text-xs font-semibold shadow-sm active:scale-95" title="App Settings">
+                <i class="fa-solid fa-gear text-base text-brand-400"></i>
+                <span class="hidden md:inline">Settings</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Page Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- PAGE 1: DASHBOARD & LOGGING -->
+        <div id="pageDashboard" class="space-y-6">
+            
+            <!-- Quick Summary Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Time Studied</p>
+                            <h4 id="dashTotalHours" class="text-3xl font-extrabold text-white mt-1">0.0 hrs</h4>
+                        </div>
+                        <div class="p-2.5 bg-brand-500/10 rounded-xl text-brand-400 border border-brand-500/20">
+                            <i class="fa-solid fa-clock text-lg"></i>
+                        </div>
+                    </div>
+                    <span id="dashSessionCount" class="text-xs text-slate-500 mt-2 block">0 total sessions logged</span>
+                </div>
+
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">This Week</p>
+                            <h4 id="dashWeeklyHours" class="text-3xl font-extrabold text-brand-400 mt-1">0.0 hrs</h4>
+                        </div>
+                        <div class="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
+                            <i class="fa-solid fa-calendar-week text-lg"></i>
+                        </div>
+                    </div>
+                    <span id="dashGoalProgressText" class="text-xs text-emerald-400 font-medium mt-2 block">0% of weekly target</span>
+                </div>
+
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Most Studied Subject</p>
+                            <h4 id="dashTopSubject" class="text-2xl font-bold text-purple-400 mt-1 truncate max-w-[160px]">-</h4>
+                        </div>
+                        <div class="p-2.5 bg-purple-500/10 rounded-xl text-purple-400 border border-purple-500/20">
+                            <i class="fa-solid fa-trophy text-lg"></i>
+                        </div>
+                    </div>
+                    <span id="dashTopSubjectTime" class="text-xs text-slate-500 mt-2 block">0 hrs spent</span>
+                </div>
+
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Avg Session Length</p>
+                            <h4 id="dashAvgSession" class="text-3xl font-extrabold text-amber-400 mt-1">0m</h4>
+                        </div>
+                        <div class="p-2.5 bg-amber-500/10 rounded-xl text-amber-400 border border-amber-500/20">
+                            <i class="fa-solid fa-stopwatch text-lg"></i>
+                        </div>
+                    </div>
+                    <span id="dashActiveSubjects" class="text-xs text-slate-500 mt-2 block">Across 0 active subjects</span>
+                </div>
+            </div>
+
+            <!-- Weekly Goal Progress Bar Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-2">
+                <div class="flex justify-between items-center text-xs font-bold">
+                    <span class="text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-bullseye text-brand-400"></i> Weekly Target Goal Progress
+                    </span>
+                    <span id="dashGoalBarText" class="text-brand-400">0.0 / 20.0 hrs</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-3.5 overflow-hidden border border-slate-800 p-0.5">
+                    <div id="dashGoalProgressBar" class="bg-gradient-to-r from-brand-600 via-indigo-500 to-purple-400 h-full w-0 transition-all duration-500 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- Live Stopwatch & Manual Entry Forms Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Mode Selector Tabs -->
+                <div class="lg:col-span-12">
+                    <div class="bg-slate-900 p-1.5 rounded-2xl border border-slate-800 flex max-w-md mx-auto sm:mx-0">
+                        <button id="tabTimer" onclick="switchLoggingMode('timer')" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-brand-600 text-white shadow-md">
+                            <i class="fa-solid fa-stopwatch"></i> Live Stopwatch
+                        </button>
+                        <button id="tabManual" onclick="switchLoggingMode('manual')" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
+                            <i class="fa-solid fa-pen-to-square"></i> Quick Manual Entry
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timer Section -->
+                <div id="sectionTimer" class="lg:col-span-12 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="max-w-xl mx-auto space-y-6">
+                        <div class="text-center py-2">
+                            <span id="timerDisplay" class="font-mono text-5xl sm:text-6xl font-extrabold tracking-wider text-slate-100 block my-1">00:00:00</span>
+                            <p id="timerStatus" class="text-xs text-slate-400 uppercase tracking-widest font-semibold">Ready to Study</p>
+                        </div>
+
+                        <!-- Stopwatch Control Buttons -->
+                        <div class="flex items-center justify-center gap-3">
+                            <button id="btnStartTimer" onclick="startTimer()" class="flex-1 max-w-xs py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 active:scale-95">
+                                <i class="fa-solid fa-play"></i> Start Timer
+                            </button>
+                            <button id="btnPauseTimer" onclick="pauseTimer()" class="hidden flex-1 max-w-xs py-3 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm transition items-center justify-center gap-2 shadow-lg shadow-amber-600/30 active:scale-95">
+                                <i class="fa-solid fa-pause"></i> Pause
+                            </button>
+                            <button id="btnResetTimer" onclick="resetTimer()" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition flex items-center justify-center border border-slate-700 active:scale-95" title="Reset Stopwatch">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+
+                        <!-- Timer Save Form -->
+                        <form id="formTimerSave" onsubmit="handleTimerSave(event)" class="space-y-4 pt-4 border-t border-slate-800">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Subject</label>
+                                    <select id="timerSubject" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition" required></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Session Notes / Topics</label>
+                                    <input type="text" id="timerNotes" placeholder="e.g. Solved calculus problems" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition">
+                                </div>
+                            </div>
+                            <button type="submit" id="btnSaveTimerSession" disabled class="w-full py-3 rounded-xl bg-emerald-600/40 text-slate-400 cursor-not-allowed font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i> Finish & Save Session Log
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Manual Entry Section -->
+                <div id="sectionManual" class="hidden lg:col-span-12 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl max-w-xl mx-auto w-full">
+                    <h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-brand-500"></i> Manual Study Session Log
+                    </h3>
+                    <form id="formManual" onsubmit="handleManualSave(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Date</label>
+                                <input type="date" id="manualDate" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Subject</label>
+                                <select id="manualSubject" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition" required></select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Hours</label>
+                                <input type="number" id="manualHours" min="0" max="24" value="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Minutes</label>
+                                <input type="number" id="manualMinutes" min="0" max="59" step="5" value="0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Notes / Topics Covered</label>
+                            <input type="text" id="manualNotes" placeholder="e.g. Read Chapter 4 & took summary notes" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition">
+                        </div>
+                        <button type="submit" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 active:scale-95">
+                            <i class="fa-solid fa-plus"></i> Submit Log Entry
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- PAGE 3: DETAILED TIME ANALYTICS & DISTRIBUTION -->
+        <div id="pageAnalytics" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+                
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-brand-500"></i> Study Time Distribution & Visual Breakdown
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Comprehensive analytics on subject balance and continuous progress</p>
+                    </div>
+                    <!-- Time Range Filter Toggle -->
+                    <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex self-start sm:self-auto">
+                        <button id="filterAllTime" onclick="setDistributionFilter('all')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition bg-brand-600 text-white shadow">All Time</button>
+                        <button id="filterThisWeek" onclick="setDistributionFilter('week')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-slate-200">Past 7 Days</button>
+                    </div>
+                </div>
+
+                <!-- Donut Chart & Bar Chart Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    <!-- Subject Share Donut Chart -->
+                    <div class="lg:col-span-5 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 flex flex-col items-center justify-center min-h-[320px]">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 w-full text-left">
+                            <i class="fa-solid fa-pie-chart text-indigo-400 mr-1.5"></i>Subject Share Proportion
+                        </h3>
+                        <div class="relative w-full h-60 flex items-center justify-center">
+                            <canvas id="distributionDonutChart"></canvas>
+                            <div class="absolute flex flex-col items-center justify-center text-center pointer-events-none">
+                                <span class="text-xs text-slate-500 font-medium">Total</span>
+                                <span id="donutCenterHours" class="text-xl font-bold text-slate-100">0 hrs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Trend Bar Chart -->
+                    <div class="lg:col-span-7 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 min-h-[320px] flex flex-col justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                            <i class="fa-solid fa-chart-column text-brand-400 mr-1.5"></i>7-Day Daily Study Breakdown
+                        </h3>
+                        <div class="h-60 w-full">
+                            <canvas id="dailyTrendBarChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Detailed Subject Stats Breakdown Cards -->
+                <div class="space-y-3 pt-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-layer-group text-purple-400"></i> Subject Level Detailed Metrics
+                    </h3>
+                    <div id="subjectBreakdownContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Dynamic breakdown cards inserted via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PAGE 4: STUDY SESSION LOGS -->
+        <div id="pageLogs" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+                
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-brand-500"></i> Study Session Logs
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Filter, search, edit, or remove past study entries</p>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="logFilterSubject" onchange="renderLogsTable()" class="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500">
+                            <option value="ALL">All Subjects</option>
+                        </select>
+                        <input type="date" id="logFilterDate" onchange="renderLogsTable()" class="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-brand-500">
+                        <button onclick="clearLogFilters()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 rounded-xl border border-slate-700 transition">
+                            Reset Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Container -->
+                <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Date</th>
+                                <th class="p-3.5">Subject</th>
+                                <th class="p-3.5">Duration</th>
+                                <th class="p-3.5">Notes</th>
+                                <th class="p-3.5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessionTableBody" class="divide-y divide-slate-800/60 text-slate-300 bg-slate-900/40">
+                            <!-- Dynamic session rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyTableMessage" class="hidden text-center py-12 text-slate-500 text-xs">
+                    <i class="fa-solid fa-folder-open text-4xl mb-3 block text-slate-600"></i>
+                    No logged sessions found matching your criteria.
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- PAGE 2: SETTINGS MODAL (Triggered by Gear Button) -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 relative transform scale-95 transition-transform duration-300" id="settingsModalContent">
+            
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-brand-500"></i> Settings & Preferences
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-5">
+                <!-- Weekly Study Target -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold uppercase text-slate-400">Weekly Goal Target (Hours)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="weeklyGoalInput" min="1" max="100" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition">
+                        <button onclick="handleSaveGoal()" class="bg-brand-600 hover:bg-brand-500 text-xs px-4 py-2 rounded-xl font-bold text-white transition">Save</button>
+                    </div>
+                </div>
+
+                <!-- Manage Custom Subjects & Custom Colors -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold uppercase text-slate-400">Manage Custom Subjects & Colors</label>
+                    
+                    <form onsubmit="handleAddSubject(event)" class="flex gap-2">
+                        <input type="text" id="newSubjectName" placeholder="Subject name..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500 transition" required>
+                        <input type="color" id="newSubjectColor" value="#6366f1" class="w-10 h-10 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer p-1">
+                        <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-xs px-3.5 py-2 rounded-xl font-bold text-white transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+                    </form>
+
+                    <div id="subjectSettingsList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Dynamic editable subject items -->
+                    </div>
+                </div>
+
+                <!-- Clear All Data Options -->
+                <div class="pt-4 border-t border-slate-800 space-y-2">
+                    <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider">Danger Zone</h4>
+                    <button onclick="clearAllSessions()" class="w-full py-2.5 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i> Reset & Clear All Session Logs
+                    </button>
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button onclick="closeSettingsModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 rounded-xl border border-slate-700 transition">
+                    Done
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Edit Session Modal -->
+    <div id="editSessionModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative transform scale-95 transition-transform duration-300" id="editSessionModalContent">
+            
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen text-brand-500"></i> Edit Log Entry
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="formEditSession" onsubmit="handleSaveEditSession(event)" class="space-y-3">
+                <input type="hidden" id="editSessionId">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Date</label>
+                    <input type="date" id="editSessionDate" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Subject</label>
+                    <select id="editSessionSubject" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500" required></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Hours Duration</label>
+                    <input type="number" id="editSessionHours" step="0.1" min="0.1" max="24" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Notes</label>
+                    <input type="text" id="editSessionNotes" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="pt-3 flex justify-end gap-2">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 rounded-xl border border-slate-700">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-xs font-bold text-white rounded-xl shadow">Save Changes</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Notification Toast Modal -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-slate-100 border border-slate-800 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none z-50">
+        <div id="toastIcon" class="text-emerald-400"><i class="fa-solid fa-circle-check text-lg"></i></div>
+        <div id="toastMessage" class="text-xs font-semibold">Action completed successfully!</div>
+    </div>
+
+    <!-- Application Controller Logic -->
+    <script>
+        // Preset Colors Palette
+        const DEFAULT_COLORS = ['#6366f1', '#a855f7', '#ec4899', '#10b981', '#f59e0b', '#06b6d4', '#3b82f6'];
+
+        // Global State
+        let appState = {
+            subjects: [
+                { name: 'Mathematics', color: '#6366f1' },
+                { name: 'Computer Science', color: '#a855f7' },
+                { name: 'Physics', color: '#ec4899' },
+                { name: 'History', color: '#10b981' }
+            ],
+            weeklyGoalHours: 20,
+            sessions: []
+        };
+
+        let currentPage = 'dashboard';
+        let distributionFilter = 'all';
+
+        // Timer State
+        let timerInterval = null;
+        let timerElapsedSeconds = 0;
+        let isTimerRunning = false;
+
+        // Chart Instances
+        let donutChartInstance = null;
+        let barChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            initDefaults();
+            renderAll();
+        });
+
+        function initDefaults() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('manualDate').value = today;
+            document.getElementById('weeklyGoalInput').value = appState.weeklyGoalHours;
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('studylog_app_state_v3', JSON.stringify(appState));
+        }
+
+        function loadFromLocalStorage() {
+            const stored = localStorage.getItem('studylog_app_state_v3');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    appState = { ...appState, ...parsed };
+                } catch (e) {
+                    console.error("Failed loading local storage state", e);
+                }
+            }
+        }
+
+        // PAGE NAVIGATION
+        function switchPage(pageId) {
+            currentPage = pageId;
+
+            // Update Header Nav Pills
+            const navDashboard = document.getElementById('navDashboard');
+            const navAnalytics = document.getElementById('navAnalytics');
+            const navLogs = document.getElementById('navLogs');
+
+            const inactiveStyle = "px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-slate-200";
+            const activeStyle = "px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-brand-600 text-white shadow-md";
+
+            navDashboard.className = pageId === 'dashboard' ? activeStyle : inactiveStyle;
+            navAnalytics.className = pageId === 'analytics' ? activeStyle : inactiveStyle;
+            navLogs.className = pageId === 'logs' ? activeStyle : inactiveStyle;
+
+            // Toggle Page Elements
+            document.getElementById('pageDashboard').classList.toggle('hidden', pageId !== 'dashboard');
+            document.getElementById('pageAnalytics').classList.toggle('hidden', pageId !== 'analytics');
+            document.getElementById('pageLogs').classList.toggle('hidden', pageId !== 'logs');
+
+            // Render view-specific content
+            if (pageId === 'analytics') {
+                renderDistributionSection();
+            } else if (pageId === 'logs') {
+                renderLogsTable();
+            }
+        }
+
+        // SETTINGS MODAL (PAGE 2)
+        function openSettingsModal() {
+            renderSubjectSettingsList();
+            document.getElementById('weeklyGoalInput').value = appState.weeklyGoalHours;
+            const modal = document.getElementById('settingsModal');
+            const content = document.getElementById('settingsModalContent');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            const content = document.getElementById('settingsModalContent');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.add('scale-95');
+        }
+
+        function renderSubjectSettingsList() {
+            const container = document.getElementById('subjectSettingsList');
+            container.innerHTML = appState.subjects.map((s, idx) => `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <input type="color" value="${s.color}" onchange="updateSubjectColor(${idx}, this.value)" class="w-6 h-6 rounded-lg bg-transparent border-0 cursor-pointer p-0">
+                        <span class="text-xs font-medium text-slate-200">${s.name}</span>
+                    </div>
+                    <button onclick="removeSubject(${idx})" class="text-slate-500 hover:text-rose-400 text-xs p-1">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateSubjectColor(index, newColor) {
+            appState.subjects[index].color = newColor;
+            saveToLocalStorage();
+            renderAll();
+        }
+
+        function handleAddSubject(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('newSubjectName');
+            const colorInput = document.getElementById('newSubjectColor');
+            const name = nameInput.value.trim();
+
+            if (name && !appState.subjects.some(s => s.name === name)) {
+                appState.subjects.push({ name: name, color: colorInput.value });
+                saveToLocalStorage();
+                renderAll();
+                renderSubjectSettingsList();
+                nameInput.value = '';
+                showToast(`Added subject "${name}"`);
+            }
+        }
+
+        function removeSubject(index) {
+            if (appState.subjects.length <= 1) {
+                showToast("Keep at least one subject.", "warning");
+                return;
+            }
+            const removed = appState.subjects.splice(index, 1);
+            saveToLocalStorage();
+            renderAll();
+            renderSubjectSettingsList();
+            showToast(`Removed subject "${removed[0].name}"`);
+        }
+
+        function handleSaveGoal() {
+            const val = parseFloat(document.getElementById('weeklyGoalInput').value);
+            if (val && val > 0) {
+                appState.weeklyGoalHours = val;
+                saveToLocalStorage();
+                renderAll();
+                showToast("Weekly target updated!");
+            }
+        }
+
+        // LOGGING MODE TOGGLE (Timer vs Manual)
+        function switchLoggingMode(mode) {
+            const tabTimer = document.getElementById('tabTimer');
+            const tabManual = document.getElementById('tabManual');
+            const sectionTimer = document.getElementById('sectionTimer');
+            const sectionManual = document.getElementById('sectionManual');
+
+            const activeBtn = "flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-brand-600 text-white shadow-md";
+            const inactiveBtn = "flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+
+            tabTimer.className = mode === 'timer' ? activeBtn : inactiveBtn;
+            tabManual.className = mode === 'manual' ? activeBtn : inactiveBtn;
+
+            sectionTimer.classList.toggle('hidden', mode !== 'timer');
+            sectionManual.classList.toggle('hidden', mode !== 'manual');
+        }
+
+        // STOPWATCH TIMER LOGIC
+        function startTimer() {
+            if (isTimerRunning) return;
+            isTimerRunning = true;
+            
+            document.getElementById('btnStartTimer').classList.add('hidden');
+            document.getElementById('btnPauseTimer').classList.remove('hidden');
+            document.getElementById('btnPauseTimer').classList.add('flex');
+            document.getElementById('timerStatus').textContent = "Timer Active";
+            document.getElementById('timerStatus').className = "text-xs text-brand-400 uppercase tracking-widest font-semibold animate-pulse";
+
+            timerInterval = setInterval(() => {
+                timerElapsedSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (!isTimerRunning) return;
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+
+            document.getElementById('btnPauseTimer').classList.add('hidden');
+            document.getElementById('btnPauseTimer').classList.remove('flex');
+            document.getElementById('btnStartTimer').classList.remove('hidden');
+            document.getElementById('timerStatus').textContent = "Timer Paused";
+            document.getElementById('timerStatus').className = "text-xs text-amber-400 uppercase tracking-widest font-semibold";
+
+            toggleSaveTimerButton();
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timerElapsedSeconds = 0;
+            updateTimerDisplay();
+            document.getElementById('timerStatus').textContent = "Ready to Study";
+            document.getElementById('timerStatus').className = "text-xs text-slate-400 uppercase tracking-widest font-semibold";
+            toggleSaveTimerButton();
+        }
+
+        function updateTimerDisplay() {
+            const hrs = Math.floor(timerElapsedSeconds / 3600);
+            const mins = Math.floor((timerElapsedSeconds % 3600) / 60);
+            const secs = timerElapsedSeconds % 60;
+
+            const pad = (num) => String(num).padStart(2, '0');
+            document.getElementById('timerDisplay').textContent = `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+
+            toggleSaveTimerButton();
+        }
+
+        function toggleSaveTimerButton() {
+            const saveBtn = document.getElementById('btnSaveTimerSession');
+            if (timerElapsedSeconds >= 60) {
+                saveBtn.disabled = false;
+                saveBtn.className = "w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95 cursor-pointer";
+            } else {
+                saveBtn.disabled = true;
+                saveBtn.className = "w-full py-3 rounded-xl bg-emerald-600/40 text-slate-400 cursor-not-allowed font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2";
+            }
+        }
+
+        function handleTimerSave(e) {
+            e.preventDefault();
+            if (timerElapsedSeconds < 60) return;
+
+            const subject = document.getElementById('timerSubject').value;
+            const notes = document.getElementById('timerNotes').value.trim() || 'Stopwatch Session';
+            const durationHours = parseFloat((timerElapsedSeconds / 3600).toFixed(2));
+            const today = new Date().toISOString().split('T')[0];
+
+            const newSession = {
+                id: Date.now().toString(),
+                date: today,
+                subject: subject,
+                hours: durationHours,
+                notes: notes
+            };
+
+            appState.sessions.unshift(newSession);
+            saveToLocalStorage();
+            renderAll();
+
+            resetTimer();
+            document.getElementById('timerNotes').value = '';
+            showToast("Session saved successfully!");
+        }
+
+        function handleManualSave(e) {
+            e.preventDefault();
+            const date = document.getElementById('manualDate').value;
+            const subject = document.getElementById('manualSubject').value;
+            const hrs = parseFloat(document.getElementById('manualHours').value) || 0;
+            const mins = parseFloat(document.getElementById('manualMinutes').value) || 0;
+            const notes = document.getElementById('manualNotes').value.trim() || 'Manual Entry';
+
+            const totalHours = parseFloat((hrs + (mins / 60)).toFixed(2));
+
+            if (totalHours <= 0) {
+                showToast("Duration must be greater than 0 minutes.", "warning");
+                return;
+            }
+
+            const newSession = {
+                id: Date.now().toString(),
+                date: date,
+                subject: subject,
+                hours: totalHours,
+                notes: notes
+            };
+
+            appState.sessions.unshift(newSession);
+            saveToLocalStorage();
+            renderAll();
+
+            document.getElementById('manualNotes').value = '';
+            showToast("Manual session entry added!");
+        }
+
+        // EDITING SESSIONS
+        function openEditModal(id) {
+            const session = appState.sessions.find(s => s.id === id);
+            if (!session) return;
+
+            document.getElementById('editSessionId').value = session.id;
+            document.getElementById('editSessionDate').value = session.date;
+            document.getElementById('editSessionSubject').value = session.subject;
+            document.getElementById('editSessionHours').value = session.hours;
+            document.getElementById('editSessionNotes').value = session.notes;
+
+            const modal = document.getElementById('editSessionModal');
+            const content = document.getElementById('editSessionModalContent');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editSessionModal');
+            const content = document.getElementById('editSessionModalContent');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.add('scale-95');
+        }
+
+        function handleSaveEditSession(e) {
+            e.preventDefault();
+            const id = document.getElementById('editSessionId').value;
+            const session = appState.sessions.find(s => s.id === id);
+
+            if (session) {
+                session.date = document.getElementById('editSessionDate').value;
+                session.subject = document.getElementById('editSessionSubject').value;
+                session.hours = parseFloat(document.getElementById('editSessionHours').value) || session.hours;
+                session.notes = document.getElementById('editSessionNotes').value.trim();
+
+                saveToLocalStorage();
+                renderAll();
+                closeEditModal();
+                showToast("Log entry updated!");
+            }
+        }
+
+        function deleteSession(id) {
+            appState.sessions = appState.sessions.filter(s => s.id !== id);
+            saveToLocalStorage();
+            renderAll();
+            showToast("Session log deleted.");
+        }
+
+        function clearAllSessions() {
+            if (appState.sessions.length === 0) return;
+            if (confirm("Are you sure you want to delete ALL study sessions? This action cannot be undone.")) {
+                appState.sessions = [];
+                saveToLocalStorage();
+                renderAll();
+                closeSettingsModal();
+                showToast("All data cleared.");
+            }
+        }
+
+        // RENDER RENDER CONTROLLER
+        function renderAll() {
+            renderSubjectDropdowns();
+            renderDashboardMetrics();
+            if (currentPage === 'analytics') renderDistributionSection();
+            if (currentPage === 'logs') renderLogsTable();
+        }
+
+        function renderSubjectDropdowns() {
+            const timerSelect = document.getElementById('timerSubject');
+            const manualSelect = document.getElementById('manualSubject');
+            const filterSelect = document.getElementById('logFilterSubject');
+            const editSelect = document.getElementById('editSessionSubject');
+
+            const options = appState.subjects.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+            
+            timerSelect.innerHTML = options;
+            manualSelect.innerHTML = options;
+            editSelect.innerHTML = options;
+            filterSelect.innerHTML = `<option value="ALL">All Subjects</option>` + options;
+        }
+
+        function renderDashboardMetrics() {
+            const totalHours = appState.sessions.reduce((acc, curr) => acc + curr.hours, 0);
+            document.getElementById('dashTotalHours').textContent = `${totalHours.toFixed(1)} hrs`;
+            document.getElementById('dashSessionCount').textContent = `${appState.sessions.length} total sessions logged`;
+
+            // Calculate weekly hours
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+            const weeklySessions = appState.sessions.filter(s => new Date(s.date) >= sevenDaysAgo);
+            const weeklyHours = weeklySessions.reduce((acc, curr) => acc + curr.hours, 0);
+
+            document.getElementById('dashWeeklyHours').textContent = `${weeklyHours.toFixed(1)} hrs`;
+
+            const goalPct = Math.min(100, Math.round((weeklyHours / appState.weeklyGoalHours) * 100));
+            document.getElementById('dashGoalProgressText').textContent = `${goalPct}% of weekly goal (${appState.weeklyGoalHours}h)`;
+
+            document.getElementById('dashGoalBarText').textContent = `${weeklyHours.toFixed(1)} / ${appState.weeklyGoalHours}.0 hrs`;
+            document.getElementById('dashGoalProgressBar').style.width = `${goalPct}%`;
+
+            const avgMinutes = appState.sessions.length > 0 ? Math.round((totalHours * 60) / appState.sessions.length) : 0;
+            document.getElementById('dashAvgSession').textContent = `${avgMinutes}m`;
+            document.getElementById('dashActiveSubjects').textContent = `Across ${appState.subjects.length} active subjects`;
+
+            // Most Studied Subject
+            const totalsBySubject = {};
+            appState.sessions.forEach(s => {
+                totalsBySubject[s.subject] = (totalsBySubject[s.subject] || 0) + s.hours;
+            });
+
+            let topSubj = '-';
+            let maxHrs = 0;
+            for (const [subj, hrs] of Object.entries(totalsBySubject)) {
+                if (hrs > maxHrs) {
+                    maxHrs = hrs;
+                    topSubj = subj;
+                }
+            }
+
+            document.getElementById('dashTopSubject').textContent = topSubj;
+            document.getElementById('dashTopSubjectTime').textContent = maxHrs > 0 ? `${maxHrs.toFixed(1)} hrs spent` : '0 hrs spent';
+        }
+
+        // PAGE 3: ANALYTICS RENDER
+        function setDistributionFilter(filter) {
+            distributionFilter = filter;
+            document.getElementById('filterAllTime').className = filter === 'all' ? "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition bg-brand-600 text-white shadow" : "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-slate-200";
+            document.getElementById('filterThisWeek').className = filter === 'week' ? "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition bg-brand-600 text-white shadow" : "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-slate-200";
+            renderDistributionSection();
+        }
+
+        function renderDistributionSection() {
+            let filteredSessions = appState.sessions;
+            if (distributionFilter === 'week') {
+                const sevenDaysAgo = new Date(new Date().getTime() - (7 * 24 * 60 * 60 * 1000));
+                filteredSessions = appState.sessions.filter(s => new Date(s.date) >= sevenDaysAgo);
+            }
+
+            const totalFilteredHours = filteredSessions.reduce((acc, curr) => acc + curr.hours, 0);
+            document.getElementById('donutCenterHours').textContent = `${totalFilteredHours.toFixed(1)} hrs`;
+
+            const subjectStats = {};
+            appState.subjects.forEach(subj => {
+                subjectStats[subj.name] = { totalHours: 0, sessionCount: 0, color: subj.color };
+            });
+
+            filteredSessions.forEach(s => {
+                if (!subjectStats[s.subject]) {
+                    subjectStats[s.subject] = { totalHours: 0, sessionCount: 0, color: '#6366f1' };
+                }
+                subjectStats[s.subject].totalHours += s.hours;
+                subjectStats[s.subject].sessionCount += 1;
+            });
+
+            const labels = [];
+            const dataValues = [];
+            const backgroundColors = [];
+
+            appState.subjects.forEach(s => {
+                const stats = subjectStats[s.name] || { totalHours: 0 };
+                labels.push(s.name);
+                dataValues.push(parseFloat(stats.totalHours.toFixed(2)));
+                backgroundColors.push(s.color);
+            });
+
+            // Donut Chart
+            const donutCtx = document.getElementById('distributionDonutChart').getContext('2d');
+            if (donutChartInstance) donutChartInstance.destroy();
+
+            donutChartInstance = new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Daily Trend Chart
+            const days = [];
+            const dailyHours = [];
+
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                days.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+
+                const dayTotal = appState.sessions
+                    .filter(s => s.date === dateStr)
+                    .reduce((acc, curr) => acc + curr.hours, 0);
+
+                dailyHours.push(parseFloat(dayTotal.toFixed(2)));
+            }
+
+            const barCtx = document.getElementById('dailyTrendBarChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Hours Studied',
+                        data: dailyHours,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Breakdown Cards
+            const container = document.getElementById('subjectBreakdownContainer');
+            container.innerHTML = appState.subjects.map(subj => {
+                const stats = subjectStats[subj.name] || { totalHours: 0, sessionCount: 0 };
+                const pctOfTotal = totalFilteredHours > 0 ? ((stats.totalHours / totalFilteredHours) * 100).toFixed(1) : 0;
+                const avgLengthMinutes = stats.sessionCount > 0 ? Math.round((stats.totalHours * 60) / stats.sessionCount) : 0;
+
+                return `
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-3 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-xs text-slate-200 flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full inline-block" style="background-color: ${subj.color}"></span>
+                                ${subj.name}
+                            </span>
+                            <span class="text-xs font-extrabold text-slate-100">${stats.totalHours.toFixed(1)} hrs</span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
+                                <span>Share of Total</span>
+                                <span>${pctOfTotal}%</span>
+                            </div>
+                            <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                                <div class="h-full rounded-full transition-all duration-500" style="width: ${pctOfTotal}%; background-color: ${subj.color}"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-900 text-[11px]">
+                            <div>
+                                <span class="text-slate-500 block">Sessions</span>
+                                <span class="font-semibold text-slate-300">${stats.sessionCount} logged</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block">Avg Duration</span>
+                                <span class="font-semibold text-slate-300">${avgLengthMinutes} mins</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // PAGE 4: LOGS TABLE
+        function renderLogsTable() {
+            const tbody = document.getElementById('sessionTableBody');
+            const emptyMsg = document.getElementById('emptyTableMessage');
+
+            const selectedSubject = document.getElementById('logFilterSubject').value;
+            const selectedDate = document.getElementById('logFilterDate').value;
+
+            let filtered = appState.sessions;
+
+            if (selectedSubject !== 'ALL') {
+                filtered = filtered.filter(s => s.subject === selectedSubject);
+            }
+            if (selectedDate) {
+                filtered = filtered.filter(s => s.date === selectedDate);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyMsg.classList.remove('hidden');
+                return;
+            }
+
+            emptyMsg.classList.add('hidden');
+            tbody.innerHTML = filtered.map(s => {
+                const hoursFormatted = s.hours < 1 ? `${Math.round(s.hours * 60)} mins` : `${s.hours} hrs`;
+                const subjObj = appState.subjects.find(sub => sub.name === s.subject);
+                const color = subjObj ? subjObj.color : '#6366f1';
+
+                return `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-3.5 font-semibold text-slate-200">${s.date}</td>
+                        <td class="p-3.5">
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border flex items-center gap-1.5 w-fit" style="background-color: ${color}15; color: ${color}; border-color: ${color}30">
+                                <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></span>
+                                ${s.subject}
+                            </span>
+                        </td>
+                        <td class="p-3.5 font-bold text-slate-100">${hoursFormatted}</td>
+                        <td class="p-3.5 text-slate-400 max-w-[200px] truncate" title="${s.notes}">${s.notes}</td>
+                        <td class="p-3.5 text-right space-x-2">
+                            <button onclick="openEditModal('${s.id}')" class="text-slate-400 hover:text-brand-400 transition" title="Edit Entry">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteSession('${s.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete Entry">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function clearLogFilters() {
+            document.getElementById('logFilterSubject').value = 'ALL';
+            document.getElementById('logFilterDate').value = '';
+            renderLogsTable();
+        }
+
+        // Toast Notification
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.textContent = message;
+            toastIcon.innerHTML = type === "warning" ? 
+                '<i class="fa-solid fa-circle-exclamation text-amber-400 text-lg"></i>' : 
+                '<i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>';
+
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
